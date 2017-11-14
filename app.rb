@@ -31,6 +31,7 @@ end
 
 if __FILE__ == $0
   res = BTCData.get_ohlc "bitmex","btcusd-perpetual-futures","300"
+  data_300 = res['300']
   outfile = "btcusd-perpetual-futures_#{BTCData.date_prefix()}_ohlc_300.csv"
-  BTCData.save_csv res, outfile
+  BTCData.save_csv data_300, outfile
 end

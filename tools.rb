@@ -16,8 +16,7 @@ module BTCData
     }).to_s
     print "Trying url #{api_call}\n"
     res = JSON.parse RestClient.get(api_call)
-    ohlc_l = res['result'][density.to_s]
-    return ohlc_l
+    return res['result']
   end
 
   def BTCData.save_csv data_t, csv_file
