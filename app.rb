@@ -2,45 +2,35 @@ require 'rest-client'
 require 'addressable'
 require 'json'
 require 'csv'
+require 'tools'
 
-api_url = "https://api.cryptowat.ch"
+module App
+  DENSITIES = [
+    "60",
+    "300",
+    "3600"
+  ]
 
-@ohlc_template = Addressable::Template.new "https://api.cryptowat.ch/markets{/market}{/pair}{/function}{?periods}"
-@orderbook_template = Addressable::Template.new "https://api.cryptowat.ch/markets{/market}{/pair}{/function}"
+  OHLC_SOURCES = [
+    {
+      :market => "bitmex",
+      :pairs => [
+        "btcusd-perpetual-futures",
+        "btcusd-quarterly-futures"
+      ],
+      :densities => DENSITIES
+    },
+    {
+      :market => "bitfinex",
+      :pairs => [ "btcusd" ],
+      :densities => DENSITIES
+    }
+  ]
 
-def get_ohlc market, pair, density
-  api_call = @ohlc_template.expand({
-    "market" => market,
-    "pair" => pair,
-    "function" => "ohlc",
-    "periods" => density
-  }).to_s
-  print "Trying url #{api_call}\n"
-  res = JSON.parse RestClient.get(api_call)
-  ohlc_l = res['result'][density.to_s]
-  return ohlc_l
 end
 
-def save_csv data_t, csv_file
-  # Save an array of the form [[a_11,...,a_1n],[a_21,...,a_2n],...] to csv
-  CSV.open(csv_file,'w') do |csv_object|
-    data_t.each do |row_array|
-      csv_object << row_array
-    end
-  end
-end
-
-def get_orderbook market, pair
-  api_call = @orderbook_template.expand({
-    "market" => market,
-    "pair" => pair,
-    "function" => "orderbook",
-  }).to_s
-  print "Trying url #{api_call}\n"
-  res = JSON.parse RestClient.get(api_call)
-  return res['result']
-end
-
-def date_prefix
-  return Time.new.getgm.strftime('%Y%m%d%H%M%S')
+if __FILE__ == $0
+  res = BTCData.get_ohlc "bitmex","btcusd-perpetual-futures","300"
+  outfile = "btcusd-perpetual-futures_#{BTCData.date_prefix()}_ohlc_300.csv"
+  BTCData.save_csv res, outfile
 end
