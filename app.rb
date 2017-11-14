@@ -18,6 +18,11 @@ module App
       :periods => DENSITIES
     },
     {
+      :market => "bitmex",
+      :pair => "btcusd-quarterly-futures",
+      :periods => DENSITIES
+    },
+    {
       :market => "bitfinex",
       :pair => "btcusd",
       :periods => DENSITIES
@@ -27,10 +32,12 @@ module App
 end
 
 if __FILE__ == $0
-  res = BTCData.get_ohlc App::OHLC_SOURCES[0]
-  App::DENSITIES.each do |density|
-    data = res[density]
-    outfile = "btcusd-perpetual-futures_#{BTCData.date_prefix()}_ohlc_#{density}.csv"
-    BTCData.save_csv data, outfile
+  App::OHLC_SOURCES.each do |options|
+    res = BTCData.get_ohlc options
+    App::DENSITIES.each do |density|
+      data = res[density]
+      outfile = "#{options[:market]}_#{options[:pair]}_#{BTCData.date_prefix()}_ohlc_#{density}.csv"
+      BTCData.save_csv data, outfile
+    end
   end
 end
