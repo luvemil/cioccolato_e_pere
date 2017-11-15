@@ -39,4 +39,42 @@ module BTCData
   def BTCData.date_prefix
     return Time.new.getgm.strftime('%Y%m%d%H%M%S')
   end
+
+  def BTCData.parse_filename path
+    # Return match objects with data spects to put in a Slice object
+    split = [ File.dirname(path), File.basename(path) ]
+    filename = split[1]
+    mask = /(?<market>[^_]+)_(?<pair>[^_]+)_(?<date>[^_]+)_(?<function>[^_]+)(_(?<args>[^\.]+)|)\.csv/
+    m = mask.match filename
+  end
+
+  class Slice
+    attr_accessor :market, :pair, :function, :data
+
+    def self.load filename
+      data = CSV.read filename
+      new_slice = self.new
+      m = BTCData.parse_filename filename
+      new_slice.market = m[:market]
+      new_slice.pair = m[:pair]
+      new_slice.function = m[:function]
+      new_slice._loadData data, m[:args]
+      return new_slice
+    end
+
+    def _loadData data, args
+      @data = data
+    end
+  end
+
+  class OhlcSlice < Slice
+    def initialize
+      @function = "ohlc"
+      @data = {}
+    end
+
+    def _loadData data, args
+      @data[args.to_s] = data
+    end
+  end
 end
