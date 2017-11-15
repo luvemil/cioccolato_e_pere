@@ -58,16 +58,35 @@ module BTCData
     m = mask.match filename
   end
 
+  def BTCData.convert_date_string date_string
+    # Return Time object from string
+    year = date_string.slice(0,4)
+    month = date_string.slice(4,2)
+    day = date_string.slice(6,2)
+    hour = date_string.slice(8,2)
+    minutes = date_string.slice(10,2)
+    seconds = date_string.slice(12,2)
+    return Time.gm year, month, day, hour, minutes, seconds
+  end
+
   class Slice
-    attr_accessor :market, :pair, :function, :data
+    attr_accessor :market, :pair, :function, :data, :time
 
     def self.load filename
-      data = CSV.read filename
+      # Returns a new Slice object containing the data
+
+      # This test guarantees that, when using subclasses, we load the correct type of data
       new_slice = self.new
       m = BTCData.parse_filename filename
+      unless new_slice.function.instance_of? NilClass
+        if new_slice.function != m[:function]
+          return nil
+        end
+      end
+      data = CSV.read filename
+      new_slice.time = BTCData.convert_date_string m[:date]
       new_slice.market = m[:market]
       new_slice.pair = m[:pair]
-      new_slice.function = m[:function]
       new_slice._loadData data, m[:args]
       return new_slice
     end
