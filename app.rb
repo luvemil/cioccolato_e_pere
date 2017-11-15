@@ -36,7 +36,7 @@ if __FILE__ == $0
     res = BTCData.get_ohlc options
     App::DENSITIES.each do |density|
       data = res[density]
-      outfile = "#{options[:market]}_#{options[:pair]}_#{BTCData.date_prefix()}_ohlc_#{density}.csv"
+      outfile = "data/#{options[:market]}_#{options[:pair]}_#{BTCData.date_prefix()}_ohlc_#{density}.csv"
       BTCData.save_csv data, outfile
     end
   end
