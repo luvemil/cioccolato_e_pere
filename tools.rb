@@ -215,5 +215,18 @@ module BTCData
         ]
       }
     end
+
+    def append data_a
+      # This way we handle differently the first response which should be a snapshot of the orderbook
+      if data_a.size == 3
+        super data_a
+      else
+        new_slice = BTCData::BookSlice.new self.market, self.pair
+        new_slice.data["asks"] = data_a.select {|x| x[2] < 0}
+        new_slice.data["bids"] = data_a.select {|x| x[2] > 0}
+        new_slice.time = Time.new.getgm
+        new_slice.save_csv @save_dir
+      end
+    end
   end
 end
