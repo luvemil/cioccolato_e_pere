@@ -26,9 +26,24 @@ module BTCData
     return res['result']
   end
 
+  def BTCData.get_function options = {}
+    api_call = @orderbook_template.expand(options).to_s
+    print "Trying url #{api_call}\n"
+    res = JSON.parse RestClient.get(api_call)
+    return res['result']
+  end
+
   def BTCData.save_csv data_t, csv_file
     # Save an array of the form [[a_11,...,a_1n],[a_21,...,a_2n],...] to csv
     CSV.open(csv_file,'w') do |csv_object|
+      data_t.each do |row_array|
+        csv_object << row_array
+      end
+    end
+  end
+
+  def BTCData.append_csv data_t, csv_file
+    CSV.open(csv_file, 'a') do |csv_object|
       data_t.each do |row_array|
         csv_object << row_array
       end
@@ -107,9 +122,13 @@ module BTCData
 
     def save_csv out_dir
       @data.keys.each do |key|
-        outfile = "#{out_dir}/#{self.market}_#{self.pair}_#{BTCData._date_to_string(self.time)}_#{self.function}_#{key}.csv"
+        outfile = "#{out_dir}/#{self.get_filename(key)}"
         BTCData.save_csv @data[key], outfile
       end
+    end
+
+    def get_filename key
+      return "#{self.market}_#{self.pair}_#{BTCData._date_to_string(self.time)}_#{self.function}_#{key}.csv"
     end
 
     def _loadData data, args
@@ -137,6 +156,53 @@ module BTCData
         "asks" => nil,
         "bids" => nil
       }
+    end
+  end
+
+  class TradeSlice < Slice
+    def initialize market, pair
+      super market, pair
+      @function = "trades"
+      @data = {
+        "trades" => []
+      }
+    end
+
+    def read_response res
+      # Load data from a response object, you should take care of calling the correct object
+      @data["trades"] = res
+      @time = Time.new.getgm
+    end
+
+  end
+
+  class FeedSlice < Slice
+    attr_accessor :save_dir
+
+    def initialize market, pair, function, save_dir
+      super market, pair
+      @function = function
+      @data = {
+        :feed => []
+      }
+      @save_dir = save_dir
+      @time = Time.new.getgm
+      @count = 0
+    end
+
+    def append data_a
+      # Append data to the feed, adding a timestamp
+      @data[:feed] << data_a.unshift(Time.new.tv_sec)
+      @count += 1
+      if @count % 100 == 0
+        self.dump_data
+      end
+    end
+
+    def dump_data
+      output = @data
+      @data = []
+      BTCData::append_csv output, "#{self.save_dir/self.get_filename("feed")}"
     end
   end
 end
