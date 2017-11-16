@@ -29,18 +29,22 @@ trades_feed = BTCData::FeedSlice.new options[:market], options[:pair], "trades",
 
 
 client.listen_account do |c|
+  # puts "account: #{c}"
   account_feed.append c
 end
 
 client.listen_ticker do |t|
+  # puts "ticker: #{t}"
   ticker_feed.append t
 end
 
 client.listen_book do |b|
+  # puts "book: #{b}"
   book_feed.append b
 end
 
 client.listen_trades do |b|
+  # puts "trades: #{b}"
   trades_feed.append b
 end
 

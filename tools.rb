@@ -183,7 +183,7 @@ module BTCData
       super market, pair
       @function = function
       @data = {
-        :feed => []
+        "feed" => []
       }
       @save_dir = save_dir
       @time = Time.new.getgm
@@ -192,7 +192,7 @@ module BTCData
 
     def append data_a
       # Append data to the feed, adding a timestamp
-      @data[:feed] << data_a.unshift(Time.new.tv_sec)
+      @data["feed"] << data_a.unshift(Time.new.tv_sec)
       @count += 1
       if @count % 100 == 0
         self.dump_data
@@ -200,9 +200,9 @@ module BTCData
     end
 
     def dump_data
-      output = @data
-      @data = []
-      BTCData::append_csv output, "#{self.save_dir/self.get_filename("feed")}"
+      output = @data["feed"]
+      @data["feed"] = []
+      BTCData::append_csv output, "#{self.save_dir}/#{self.get_filename('feed')}"
     end
   end
 end
