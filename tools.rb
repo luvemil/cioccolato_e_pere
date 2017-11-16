@@ -205,4 +205,15 @@ module BTCData
       BTCData::append_csv output, "#{self.save_dir}/#{self.get_filename('feed')}"
     end
   end
+
+  class OrderbookFeed < FeedSlice
+    def initialize market, pair, save_dir
+      super market, pair, "orderbook", save_dir
+      @data = {
+        "feed" => [
+          %W[Timestamp Price Count Amount]
+        ]
+      }
+    end
+  end
 end
