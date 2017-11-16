@@ -35,12 +35,10 @@ module BTCData
     end
   end
 
-  def BTCData.get_orderbook market, pair
-    api_call = @orderbook_template.expand({
-      "market" => market,
-      "pair" => pair,
-      "function" => "orderbook",
-    }).to_s
+  def BTCData.get_orderbook options = {}
+    api_call = @orderbook_template.partial_expand({
+      "function" => "orderbook"
+    }).expand(options).to_s
     print "Trying url #{api_call}\n"
     res = JSON.parse RestClient.get(api_call)
     return res['result']
@@ -48,6 +46,10 @@ module BTCData
 
   def BTCData.date_prefix
     return Time.new.getgm.strftime('%Y%m%d%H%M%S')
+  end
+
+  def BTCData._date_to_string time
+    return time.strftime('%Y%m%d%H%M%S')
   end
 
   def BTCData.parse_filename path
@@ -72,12 +74,20 @@ module BTCData
   class Slice
     attr_accessor :market, :pair, :function, :data, :time
 
+    def initialize market, pair
+      @market = market
+      @pair = pair
+    end
+
     def self.load filename
       # Returns a new Slice object containing the data
 
       # This test guarantees that, when using subclasses, we load the correct type of data
-      new_slice = self.new
       m = BTCData.parse_filename filename
+      market = m[:market]
+      pair = m[:pair]
+
+      new_slice = self.new market, pair
       unless new_slice.function.instance_of? NilClass
         if new_slice.function != m[:function]
           return nil
@@ -85,25 +95,48 @@ module BTCData
       end
       data = CSV.read filename
       new_slice.time = BTCData.convert_date_string m[:date]
-      new_slice.market = m[:market]
-      new_slice.pair = m[:pair]
       new_slice._loadData data, m[:args]
       return new_slice
     end
 
+    def read_response res
+      # Load data from a response object, you should take care of calling the correct object
+      @data = res
+      @time = Time.new.getgm
+    end
+
+    def save_csv out_dir
+      @data.keys.each do |key|
+        outfile = "#{out_dir}/#{self.market}_#{self.pair}_#{BTCData._date_to_string(self.time)}_#{self.function}_#{key}.csv"
+        BTCData.save_csv @data[key], outfile
+      end
+    end
+
     def _loadData data, args
-      @data = data
+      if args.instance_of? NilClass
+        @data = {:all => data}
+      else
+        @data[args.to_s] = data
+      end
     end
   end
 
   class OhlcSlice < Slice
-    def initialize
+    def initialize market, pair
+      super market, pair
       @function = "ohlc"
       @data = {}
     end
+  end
 
-    def _loadData data, args
-      @data[args.to_s] = data
+  class BookSlice < Slice
+    def initialize market, pair
+      super market, pair
+      @function = "orderbook"
+      @data = {
+        "asks" => nil,
+        "bids" => nil
+      }
     end
   end
 end

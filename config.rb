@@ -23,4 +23,10 @@ module Config
     }
   ]
 
+  BOOK_SOURCES = [
+    {
+      :market => "bitfinex",
+      :pair => "btcusd"
+    }
+  ]
 end
