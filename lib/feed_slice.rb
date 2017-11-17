@@ -29,9 +29,9 @@ module BTCData
     end
 
     def dump_data
-      output = @data["feed"]
+      out_dir = @data["feed"]
       @data["feed"] = []
-      BTCData::append_csv output, "#{self.save_dir}/#{self.get_filename('feed')}"
+      BTCData::append_csv out_dir, "#{self.save_dir}/#{self.get_filename('feed')}"
     end
   end
 
