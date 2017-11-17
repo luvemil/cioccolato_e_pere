@@ -5,8 +5,8 @@ require 'dotenv'
 
 require 'bitfinex-rb'
 
-require 'tools'
 require 'config'
+require 'btcdata'
 
 Dotenv.load
 

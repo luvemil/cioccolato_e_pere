@@ -1,3 +1,5 @@
+$LOAD_PATH << "./lib"
+
 module Config
   DENSITIES = [
     "60",

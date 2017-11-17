@@ -6,8 +6,8 @@ require 'dotenv'
 
 require 'bitfinex-rb'
 
-require 'tools'
 require 'config'
+require 'btcdata'
 
 if __FILE__ == $0
   Config::OHLC_SOURCES.each do |options|
