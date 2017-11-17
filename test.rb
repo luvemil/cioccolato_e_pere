@@ -25,7 +25,7 @@ options = {
   :pair => "btcusd",
 }
 
-book_feed = BTCData::FeedSlice.new options[:market], options[:pair], "book", out_dir
+book_feed = BTCData::OrderbookFeed.new options[:market], options[:pair], out_dir
 
 
 client.listen_book do |b|
