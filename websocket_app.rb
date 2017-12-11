@@ -35,7 +35,7 @@ trades_feed = BTCData::FeedSlice.new options[:market], options[:pair], "trades",
 trades_feed.data["feed"] = %W[Timestamp te/u Id Mts Amount Price]
 
 client.listen_book do |b|
-  if b[1].size == 3
+  if b[1].kind_of?(Array) and b[1].size == 3 and not b[1].kind_of?(String)
     b = b[1]
     book_feed.append b
   else

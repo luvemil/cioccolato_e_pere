@@ -32,6 +32,7 @@ client.listen_book do |b|
   if b[1].size == 3
     b = b[1]
     book_feed.append b
+    # puts "Order: #{b}"
   else
     book_snapshot = BTCData::BookSlice.new options[:market], options[:pair]
     book_snapshot.data["asks"] = b[1].select {|x| x[2] < 0}
