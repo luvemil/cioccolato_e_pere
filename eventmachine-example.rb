@@ -45,7 +45,7 @@ snap_dir = "pre_snap"
 end
 
 bitfinex_orderbook_feed = BTCData::FeedSlice.new "bitfinex", "btcusd", "orderbook", live_dir
-bitfinex_orderbook_feed.data["feed"] = %W[Timestamp Price Count Amount]
+bitfinex_orderbook_feed.append %W[Timestamp Price Count Amount]
 
 EM.run {
   #[@bitmex, @bitfinex].each do |exchange|
