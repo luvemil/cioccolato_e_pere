@@ -27,7 +27,7 @@ require 'faye/websocket'
 
 
 EM.run {
-  [@bitmex, @bitfinex].map do |exchange|
+  [@bitmex, @bitfinex].each do |exchange|
     ws = Faye::WebSocket::Client.new(exchange[:url])
 
     ws.on :open do |event|
@@ -43,7 +43,5 @@ EM.run {
       p [:close, event.code, event.reason]
       ws = nil
     end
-
-    ws
   end
 }
