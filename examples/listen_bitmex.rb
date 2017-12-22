@@ -49,6 +49,8 @@ bitmex_orderbook_feed.append %W[Timestamp Price Count Amount]
 
 class Parser
   def initialize feed_object, exchange_name, live_dir
+    # TODO: Define a better accessor for id_mappings, i.e. avoid halting
+    # in case an id is missing
     @id_mappings = {}
     @feed_object = feed_object
     @ready = false
@@ -95,13 +97,16 @@ class Parser
   end
 
   def update_id_mappings data
-    data.each do |x|
-      @id_mappings[x["id"]] = x["price"]
+    if data.kind_of? Array
+      data.each do |x|
+        @id_mappings[x["id"]] = x["price"]
+      end
+    else
+      @id_mappings[data["id"]] = data["price"]
     end
   end
 
   def parse_update action, data
-    p [:message, data]
     # Returns a row in a csv table of the form:
     # [Timestamp, Price, Ask/Bid, Amount]
     # Where Amount = 0 means that the offer is to be eliminated
@@ -122,7 +127,7 @@ class Parser
       side = "bid"
     end
 
-    return [Time.now.tv_sec, price, side, data["size"]]
+    @feed_object.append [Time.now.tv_sec, price, side, data["size"]]
   end
 
   def delete_id data
@@ -160,6 +165,17 @@ end
 
 bitmex_parser = Parser.new bitmex_orderbook_feed, "bitmex", live_dir
 
+def manual_parse data
+  if data["action"] == "update"
+    if data["data"].kind_of? Array
+      data["data"].each {|x| log [:message,"bitmex",x]}
+    else
+      log [:message,"bitmex",data]
+    end
+  end
+  #log [:message, "bitmex", JSON.parse(event.data)]
+end
+
 EM.run {
   #[@bitmex, @bitfinex].each do |exchange|
   [@bitmex].each do |exchange|
@@ -171,7 +187,22 @@ EM.run {
     end
 
     ws.on :message do |event|
-      bitmex_parser.parse JSON.parse(event.data)
+      #manual_parse JSON.parse(event.data)
+      #bitmex_parser.parse JSON.parse(event.data)
+
+      data = JSON.parse(event.data)
+      if data["action"] == "insert"
+        log [:message, data]
+        if data["data"].kind_of? Array
+          data["data"].each do |x|
+            bitmex_parser.parse_update data["action"], x
+          end
+        else
+          bitmex_parser.parse_update data["action"], data["data"]
+        end
+      end
+
+      #bitmex_parser.parse data
     end
 
     ws.on :close do |event|
