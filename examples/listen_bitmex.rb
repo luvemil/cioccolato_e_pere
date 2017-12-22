@@ -89,6 +89,8 @@ def manual_parse data
   #log [:message, "bitmex", JSON.parse(event.data)]
 end
 
+
+# Main EventMachine thread
 EM.run {
   #[@bitmex, @bitfinex].each do |exchange|
   [@bitmex].each do |exchange|
@@ -100,9 +102,6 @@ EM.run {
     end
 
     ws.on :message do |event|
-      #manual_parse JSON.parse(event.data)
-      #bitmex_parser.parse JSON.parse(event.data)
-
       data = JSON.parse(event.data)
       bitmex_parser.parse data
     end
