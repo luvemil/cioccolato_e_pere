@@ -47,7 +47,8 @@ end
 
 
 # Setup parsers
-bitmex_orderbook_feed = BTCData::OrderbookFeed.new "bitmex", "btcusd", live_dir
+bitmex_orderbook_feed = BTCData::FeedSlice.new "bitmex", "btcusd", "orderbook", live_dir
+bitmex_orderbook_feed.set_header %W[Timestamp Price Amount]
 
 def bitfinex_parse event, exchange, bitfinex_orderbook_feed, live_dir
   b = JSON.parse(event.data)

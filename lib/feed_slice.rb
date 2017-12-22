@@ -21,7 +21,7 @@ module BTCData
     def append data_a
       # Append data to the feed, adding a timestamp
       # The user should take care of separating snapshots from updates depending on the api
-      @data["feed"] << data_a.unshift(Time.new.tv_sec)
+      @data["feed"] << data_a.unshift(Time.new.to_f)
       @count += 1
       if @count % 100 == 0
         self.dump_data
@@ -32,6 +32,10 @@ module BTCData
       out_dir = @data["feed"]
       @data["feed"] = []
       BTCData::append_csv out_dir, "#{self.save_dir}/#{self.get_filename('feed')}"
+    end
+
+    def set_header header
+      @data["feed"] << header
     end
   end
 
