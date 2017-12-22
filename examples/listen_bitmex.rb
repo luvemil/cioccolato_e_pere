@@ -44,17 +44,18 @@ snap_dir = "pre_snap"
   Dir.mkdir(out_dir) unless Dir.exist? out_dir
 end
 
-bitmex_orderbook_feed = BTCData::FeedSlice.new "bitfinex", "btcusd", "orderbook", live_dir
+bitmex_orderbook_feed = BTCData::FeedSlice.new "bitmex", "btcusd", "orderbook", live_dir
 bitmex_orderbook_feed.append %W[Timestamp Price Count Amount]
 
 class Parser
-  def initialize feed_object, exchange_name, live_dir
+  def initialize feed_object, exchange_name, save_dir
     # TODO: Define a better accessor for id_mappings, i.e. avoid halting
     # in case an id is missing
     @id_mappings = {}
     @feed_object = feed_object
     @ready = false
     @exchange_name = exchange_name
+    @save_dir = save_dir
   end
 
   def parse message
@@ -77,6 +78,7 @@ class Parser
   def parse_snapshot data
     update_id_mappings data
     bitmex_orderbook_snapshot = BTCData::BookSlice.new @exchange_name, "btcusd"
+    bitmex_orderbook_snapshot.time = Time.now
 
     # The snapshot is divided in two tables of the form
     # [ Price, Amount ]
@@ -92,6 +94,8 @@ class Parser
     }.map {|x|
       [ x["price"], x["size"]]
     }
+
+    bitmex_orderbook_snapshot.save_csv @save_dir
 
     @ready = true
   end
@@ -191,18 +195,7 @@ EM.run {
       #bitmex_parser.parse JSON.parse(event.data)
 
       data = JSON.parse(event.data)
-      if data["action"] == "insert"
-        log [:message, data]
-        if data["data"].kind_of? Array
-          data["data"].each do |x|
-            bitmex_parser.parse_update data["action"], x
-          end
-        else
-          bitmex_parser.parse_update data["action"], data["data"]
-        end
-      end
-
-      #bitmex_parser.parse data
+      bitmex_parser.parse data
     end
 
     ws.on :close do |event|
