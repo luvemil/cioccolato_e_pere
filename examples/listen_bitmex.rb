@@ -14,7 +14,15 @@ require 'json'
 require 'eventmachine'
 require 'faye/websocket'
 
+# Setup output directories
+live_dir = "live_feed"
+snap_dir = "pre_snap"
 
+[live_dir, snap_dir].each do |out_dir|
+  Dir.mkdir(out_dir) unless Dir.exist? out_dir
+end
+
+# Setup exchange config hashes
 @bitfinex = {
   :url => "wss://api.bitfinex.com/ws/2",
   :name => "bitfinex",
@@ -37,22 +45,9 @@ require 'faye/websocket'
   }
 }
 
-live_dir = "live_feed"
-snap_dir = "pre_snap"
 
-[live_dir, snap_dir].each do |out_dir|
-  Dir.mkdir(out_dir) unless Dir.exist? out_dir
-end
-
-bitmex_orderbook_feed = BTCData::FeedSlice.new "bitmex", "btcusd", "orderbook", live_dir
-bitmex_orderbook_feed.append %W[Timestamp Price Count Amount]
-
-def log a
-  @count ||= 0
-  EM.stop if @count >= 4
-  p a
-  @count += 1
-end
+# Setup parsers
+bitmex_orderbook_feed = BTCData::OrderbookFeed.new "bitmex", "btcusd", live_dir
 
 def bitfinex_parse event, exchange, bitfinex_orderbook_feed, live_dir
   b = JSON.parse(event.data)
@@ -75,24 +70,11 @@ def bitfinex_parse event, exchange, bitfinex_orderbook_feed, live_dir
   end
 end
 
-#bitmex_parser = Parser.new bitmex_orderbook_feed, "bitmex", live_dir
 bitmex_parser = BTCData::Bitmex::Parser.new bitmex_orderbook_feed, "bitmex", live_dir
-
-def manual_parse data
-  if data["action"] == "update"
-    if data["data"].kind_of? Array
-      data["data"].each {|x| log [:message,"bitmex",x]}
-    else
-      log [:message,"bitmex",data]
-    end
-  end
-  #log [:message, "bitmex", JSON.parse(event.data)]
-end
 
 
 # Main EventMachine thread
 EM.run {
-  #[@bitmex, @bitfinex].each do |exchange|
   [@bitmex].each do |exchange|
     ws = Faye::WebSocket::Client.new(exchange[:url])
 
@@ -112,3 +94,23 @@ EM.run {
     end
   end
 }
+
+# Helper methods
+
+def log a
+  @count ||= 0
+  EM.stop if @count >= 4
+  p a
+  @count += 1
+end
+
+def manual_parse data
+  if data["action"] == "update"
+    if data["data"].kind_of? Array
+      data["data"].each {|x| log [:message,"bitmex",x]}
+    else
+      log [:message,"bitmex",data]
+    end
+  end
+  #log [:message, "bitmex", JSON.parse(event.data)]
+end
