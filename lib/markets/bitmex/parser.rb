@@ -1,21 +1,21 @@
 require 'btcdata'
+require 'markets/parser'
 
 
 
 module BTCData
   module Bitmex
-    class Parser
-      def initialize feed_object, exchange_name, save_dir
+    class Parser < BTCData::Parser
+      def initialize feed_object, exchange_name, save_dir, debug=false
         # TODO: Define a better accessor for id_mappings, i.e. avoid halting
         # in case an id is missing
+        super feed_object, exchange_name, save_dir, debug
         @id_mappings = {}
-        @feed_object = feed_object
         @ready = false
-        @exchange_name = exchange_name
-        @save_dir = save_dir
       end
 
       def parse message
+        super message
         if message["action"] == "partial"
           parse_snapshot message["data"]
         elsif

@@ -1,19 +1,15 @@
 require 'btcdata'
+require 'markets/parser'
 
 
 
 module BTCData
   module Bitfinex
-    class Parser
-      def initialize feed_object, exchange_name, save_dir
-        @feed_object = feed_object
-        @exchange_name = exchange_name
-        @save_dir = save_dir
-      end
-
+    class Parser < BTCData::Parser
       def parse message
         # message should be JSON.parse(event.data) where event is the message
         # received from the websocket
+        super message
 
         # START: parsing data
         data = message[1]
