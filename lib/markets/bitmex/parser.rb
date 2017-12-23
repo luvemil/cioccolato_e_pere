@@ -71,24 +71,26 @@ module BTCData
         # Returns a row in a csv table of the form:
         # [Timestamp, Price, Ask/Bid, Amount]
         # Where Amount = 0 means that the offer is to be eliminated
-        if action == "insert"
-          update_id_mappings data
-          price = data["price"]
-        elsif action == "delete"
-          data["size"] = 0
-          price = @id_mappings[data["id"]]
-          delete_id data
-        else
-          price = @id_mappings[data["id"]]
-        end
+        if data.kind_of? Hash
+          if action == "insert"
+            update_id_mappings data
+            price = data["price"]
+          elsif action == "delete"
+            data["size"] = 0
+            price = @id_mappings[data["id"]]
+            delete_id data
+          else
+            price = @id_mappings[data["id"]]
+          end
 
-        if data["side"]=="Sell"
-          sign = -1
-        else
-          sign = 1
-        end
+          if data["side"]=="Sell"
+            sign = -1
+          else
+            sign = 1
+          end
 
-        @feed_object.append [ price, sign * data["size"]]
+          @feed_object.append [ price, sign * data["size"]]
+        end
       end
 
       def delete_id data
