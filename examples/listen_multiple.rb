@@ -33,6 +33,9 @@ end
     "prec" => "P0",
     "freq" => "F0",
     "len" => "25"
+  },
+  :close => {
+    "event" => "unsubscribe"
   }
 }
 
@@ -45,27 +48,25 @@ end
   }
 }
 
-
-# Setup feeds
-bitmex_orderbook_feed = BTCData::FeedSlice.new "bitmex", "btcusd", "orderbook", live_dir
-bitmex_orderbook_feed.set_header %W[Timestamp Price Amount]
-
-
-bitfinex_orderbook_feed = BTCData::FeedSlice.new "bitfinex", "btcusd", "orderbook", live_dir
-bitfinex_orderbook_feed.set_header %W[Timestamp Price Count Amount]
-
 # Setup parsers
 
-bitmex_parser = BTCData::Bitmex::Parser.new bitmex_orderbook_feed, "bitmex", live_dir
-@bitmex[:parser] = bitmex_parser
+def setup_parser exchange, live_dir
+  feed = BTCData::FeedSlice.new exchange, "btcusd", "orderbook", live_dir
+  if exchange == "bitmex"
+    feed.set_header %W[Timestamp Price Amount]
+    parser = BTCData::Bitmex::Parser.new feed, "bitmex", live_dir
+  elsif exchange == "bitfinex"
+    feed.set_header %W[Timestamp Price Count Amount]
+    parser = BTCData::Bitfinex::Parser.new feed, "bitfinex", live_dir
+  end
+  return parser
+end
 
-bitfinex_parser = BTCData::Bitfinex::Parser.new bitfinex_orderbook_feed, "bitfinex", live_dir
-@bitfinex[:parser] = bitfinex_parser
+@bitmex[:parser] = setup_parser "bitmex", live_dir
+@bitfinex[:parser] = setup_parser "bitfinex", live_dir
 
-
-# Main EventMachine thread
-EM.run {
-  [@bitmex, @bitfinex].each do |exchange|
+def run_websocket exchange
+  if EM.reactor_running?
     ws = Faye::WebSocket::Client.new(exchange[:url])
 
     ws.on :open do |event|
@@ -81,7 +82,18 @@ EM.run {
     ws.on :close do |event|
       p [:close, event.code, event.reason]
       ws = nil
+
+      # Force restart in case of closure
+      exchange[:parser] = setup_parser exchange[:name], exchange[:parser].save_dir
+      run_websocket exchange
     end
+  end
+end
+
+# Main EventMachine thread
+EM.run {
+  [@bitmex, @bitfinex].each do |exchange|
+    run_websocket exchange
   end
 }
 

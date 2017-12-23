@@ -1,5 +1,7 @@
 module BTCData
   class Parser
+    attr_accessor :save_dir
+
     def initialize feed_object, exchange_name, save_dir, debug=false
       @feed_object = feed_object
       @exchange_name = exchange_name
