@@ -19,14 +19,14 @@ not given, it will default to current time.
 Accepted options are:
 
   -d, --density DENSITY
-    x is one of 1m, 5m, 1h, 1d.
+    x is one of 1m, 5m, 1h, 1d (default 1d)
 
   -o, --output filename
     Write the result to filename.csv or filename.json depending on the chosen
-    format.
+    format (default SYMBOL_DENSITY_STARTDATE_ENDDATE).
 
   -s, --symbol SYMBOL
-    Specify a symbol, as accepted by Bitmex API.
+    Specify a symbol, as accepted by Bitmex API (default XBTUSD).
 
   --json
     Write to JSON instead of CSV.
