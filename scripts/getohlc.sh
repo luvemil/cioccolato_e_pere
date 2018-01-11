@@ -37,7 +37,7 @@ do
       shift
       shift
       ;;
-    -t|--symbol)
+    -s|--symbol)
       SYMBOL="$2"
       shift
       shift
