@@ -77,7 +77,7 @@ module BTCData
     end
   end
 
-  class TradeSlice < Slice
+  class TradesSlice < Slice
     def initialize market, pair
       super market, pair
       @function = "trades"
@@ -91,6 +91,5 @@ module BTCData
       @data["trades"] = res
       @time = Time.new.getgm
     end
-
   end
 end
