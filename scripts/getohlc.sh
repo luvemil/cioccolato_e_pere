@@ -70,7 +70,7 @@ fi
 BASEURL="https://www.bitmex.com/api/v1"
 ENDPOINT="/trade/bucketed"
 
-BASEQUERY="${BASEURL}${ENDPOINT}?partial=false&symbol=${SYMBOL}&binSize=${DENSITY}"
+BASEQUERY="${BASEURL}${ENDPOINT}?partial=false&symbol=${SYMBOL}&binSize=${DENSITY}&count=480"
 
 if ! $JSON_OUTPUT
 then
@@ -99,6 +99,8 @@ else
   EDATE=$(gnudate -u "+%F %T")
 fi
 
+COUNT=1
+
 while [ $(gnudate -d"$SDATE" +%s) -lt $(gnudate -d"$EDATE" +%s)  ]
 do
   if $JSON_OUTPUT
@@ -114,25 +116,30 @@ do
     "${BASEQUERY}"
   case $DENSITY in
     1m)
-      SDATE=$(gnudate --date="$SDATE 100 minutes" "+%F %T")
+      SDATE=$(gnudate --date="$SDATE 480 minutes" "+%F %T")
       ;;
     5m)
-      SDATE=$(gnudate --date="$SDATE 500 minutes" "+%F %T")
+      SDATE=$(gnudate --date="$SDATE 2400 minutes" "+%F %T")
       ;;
     1h)
-      SDATE=$(gnudate --date="$SDATE 100 hours" "+%F %T")
+      SDATE=$(gnudate --date="$SDATE 480 hours" "+%F %T")
       ;;
     1d)
-      SDATE=$(gnudate --date="$SDATE 100 days" "+%F %T")
+      SDATE=$(gnudate --date="$SDATE 480 days" "+%F %T")
       ;;
   esac
+  if (($COUNT % 270 == 0))
+  then
+    sleep 30
+  fi
+  COUNT=$(($COUNT + 1))
 done
 
 #jq -s 'reduce .[] as $item ({}; . * $item)' json_files/*
 
 if [ -z ${OUTPUT+x} ]
 then
-  OUTPUT=${SYMBOL}_${DENSITY}_$(gnudate -d"$1" "+%FT%H-%M-%S")_$(gnudate -d"$2" "+%FT%H-%M-%S")
+  OUTPUT=${SYMBOL}_${DENSITY}_$(gnudate -d"$1" "+%FT%H-%M-%S")_$(gnudate -d"$EDATE" "+%FT%H-%M-%S")
   >&2 echo "Using filename = ${OUTPUT}"
 fi
 
@@ -151,6 +158,7 @@ else
     fi
     tail -n +2 $filename >> csv_files/$OUTPUT.csv
     i=$(( $i + 1))
+    echo "" >> csv_files/$OUTPUT.csv
   done
 fi
 
