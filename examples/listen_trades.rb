@@ -31,9 +31,9 @@ end
     "event" => "subscribe",
     "channel" => "book",
     "symbol" => "tBTCUSD",
-    "prec" => "P0",
+    "prec" => "P1",
     "freq" => "F0",
-    "len" => "25"
+    "len" => "100"
   },
   :close => {
     "event" => "unsubscribe"
