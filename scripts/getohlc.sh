@@ -100,6 +100,7 @@ else
 fi
 
 COUNT=1
+SMALLCOUNT=0
 
 while [ $(gnudate -d"$SDATE" +%s) -lt $(gnudate -d"$EDATE" +%s)  ]
 do
@@ -109,25 +110,38 @@ do
   else
     FILE_EXT=.csv
   fi
-  curl --create-dirs -o tmp_files/$(gnudate -d"$SDATE" +%s)$FILE_EXT \
+  FILENAME=$(gnudate -d"$SDATE" +%s)$FILE_EXT
+  curl --create-dirs -o tmp_files/$FILENAME \
     $CURL_OPTIONS -G -X GET --header 'Accept: application/json' \
     --data-urlencode "startTime=$SDATE" \
     --data-urlencode "endTime=$EDATE" \
     "${BASEQUERY}"
-  case $DENSITY in
-    1m)
-      SDATE=$(gnudate --date="$SDATE 480 minutes" "+%F %T")
-      ;;
-    5m)
-      SDATE=$(gnudate --date="$SDATE 2400 minutes" "+%F %T")
-      ;;
-    1h)
-      SDATE=$(gnudate --date="$SDATE 480 hours" "+%F %T")
-      ;;
-    1d)
-      SDATE=$(gnudate --date="$SDATE 480 days" "+%F %T")
-      ;;
-  esac
+  if [ $( wc -l <  tmp_files/$FILENAME ) -le 15 ]
+  then
+    SMALLCOUNT=0
+    case $DENSITY in
+      1m)
+        SDATE=$(gnudate --date="$SDATE 480 minutes" "+%F %T")
+        ;;
+      5m)
+        SDATE=$(gnudate --date="$SDATE 2400 minutes" "+%F %T")
+        ;;
+      1h)
+        SDATE=$(gnudate --date="$SDATE 480 hours" "+%F %T")
+        ;;
+      1d)
+        SDATE=$(gnudate --date="$SDATE 480 days" "+%F %T")
+        ;;
+    esac
+  else
+    SMALLCOUNT=$(( $SMALLCOUNT + 1 ))
+    sleep 5
+  fi
+  if [ $SMALLCOUNT -ge 15 ]
+  then
+    >&2 echo "Error downloading $SYMBOL"
+    exit 2
+  fi
   if (($COUNT % 270 == 0))
   then
     sleep 30
@@ -162,4 +176,4 @@ else
   done
 fi
 
-rm -r tmp_files
+mv tmp_files ${SYMBOL}_files
