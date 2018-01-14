@@ -1,3 +1,6 @@
 .env
 data/
-live_feed/
+live_feed*/
+scripts/
+!scripts/*.sh
+!scripts/*.md

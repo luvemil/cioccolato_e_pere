@@ -116,7 +116,7 @@ do
     --data-urlencode "startTime=$SDATE" \
     --data-urlencode "endTime=$EDATE" \
     "${BASEQUERY}"
-  if [ $( wc -l <  tmp_files/$FILENAME ) -le 15 ]
+  if [ ! $( wc -l <  tmp_files/$FILENAME ) -le 15 ]
   then
     SMALLCOUNT=0
     case $DENSITY in
