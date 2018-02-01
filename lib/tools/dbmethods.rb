@@ -4,8 +4,9 @@ require 'files'
 
 module BTCData
   module DB
-    def self.create_snap_table conn, file_match
-      exchange = file_match[:exchange]
+    def self.create_snap_table conn, filename
+      m = BTCData::Files.patt.match filename
+      exchange = m[:exchange]
       if exchange == "bitfinex"
         base_table = "tmp_snap_bfx"
       elsif exchange == "bitmex"
@@ -48,9 +49,21 @@ module BTCData
       conn.exec("INSERT INTO orderbook_snapshots
                 (#{values}, type, snapshot_id)
                 SELECT #{values},
-                  '#{attr.upcase}' AS type,
+                  '#{self._format_attr(attr)}' AS type,
                   #{orderbook_id} AS snapshot_id
                   FROM tmp;")
+
+      # After inserting the data into the snapshot we create a new tmp table
+      self.delete_tmp_table conn
+      self.create_snap_table conn, csvpath
+    end
+
+    def self._format_attr attr
+      if attr.downcase.include? "ask"
+        return "ASK"
+      elsif attr.downcase.include? "bid"
+        return "BID"
+      end
     end
 
     def self.add_orderbook conn, csvpath
@@ -82,8 +95,26 @@ module BTCData
       res[0][0]
     end
 
+    def self.load_snapshots conn, csvpath, id
+      filename = File.basename csvpath
+
+      self.delete_tmp_table conn
+
+      self.create_snap_table conn, filename
+
+      ["asks", "bids"].each do |attr|
+        self._load_snap_single conn, csvpath, attr
+        self._move_tmp_to_snap conn, csvpath, attr, id
+      end
+
+      self.delete_tmp_table conn
+
+      # TODO: same with the feed
+
+    end
+
     def self.delete_tmp_table conn
-      conn.exec("DROP TABLE tmp;")
+      conn.exec("DROP TABLE IF EXISTS tmp;")
     end
   end
 end
