@@ -56,6 +56,10 @@ module BTCData
         @data[args.to_s] = data
       end
     end
+
+    def set_function new_function
+      @function = new_function
+    end
   end
 
   class OhlcSlice < Slice
