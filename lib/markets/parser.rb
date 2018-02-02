@@ -20,6 +20,10 @@ module BTCData
         p [:message, @exchange_name, message]
       end
     end
+
+    def dump
+      @feed_object.dump_data
+    end
   end
 end
 
