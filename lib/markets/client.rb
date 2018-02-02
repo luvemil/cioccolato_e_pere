@@ -15,10 +15,18 @@ module BTCData
 
     def self.is_valid? hash
       if hash.kind_of? Hash
-        return true
-      else
-        return false
+        [:name, :symbol, :function, :open].each do |key|
+          if not hash.has_key? key
+            return false
+          end
+        end
+        if hash[:open].kind_of? Hash
+          return true
+        else
+          return false
+        end
       end
+      return false
     end
 
     class Client
@@ -125,6 +133,9 @@ module BTCData
       def post_setup_feed
       end
 
+      def pre_setup_parser
+        p "Setting up parser for #{exchange}:#{symbol}:#{function}"
+      end
       def setup_parser
       end
     end
@@ -142,6 +153,7 @@ module BTCData
         end
       end
       def setup_parser
+        self.pre_setup_parser
         case @function
         when "orderbook"
           @parser = BTCData::Bitfinex::Parser.new @feed, @exchange, @live_dir
@@ -164,6 +176,7 @@ module BTCData
         end
       end
       def setup_parser
+        self.pre_setup_parser
         case @function
         when "orderbook"
           @parser = BTCData::Bitmex::Parser.new @feed, @exchange, @live_dir
