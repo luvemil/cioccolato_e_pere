@@ -1,23 +1,25 @@
-require 'rest-client'
-require 'addressable'
 require 'json'
 require 'csv'
 require 'dotenv'
 
-require 'bitfinex-rb'
 
 require 'config'
 require 'btcdata'
 
-if __FILE__ == $0
-  Config::OHLC_SOURCES.each do |options|
-    new_slice = BTCData::OhlcSlice.new options[:market], options[:pair]
-    new_slice.read_response BTCData.get_ohlc(options)
-    new_slice.save_csv "data"
-  end
-  Config::BOOK_SOURCES.each do |options|
-    new_slice = BTCData::BookSlice.new options[:market], options[:pair]
-    new_slice.read_response BTCData.get_orderbook(options)
-    new_slice.save_csv "data"
-  end
+Dotenv.load
+
+
+require 'json'
+require 'eventmachine'
+require 'faye/websocket'
+
+@clients = Targets.targets.map do |hash_conf|
+  BTCData::Market::Client.create_new hash_conf
 end
+
+
+EM.run {
+  @clients.each do |client|
+    client.run!
+  end
+}
