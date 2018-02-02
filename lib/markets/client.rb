@@ -103,7 +103,7 @@ module BTCData
           when "bitfinex"
             client = BTCData::Market::BitfinexClient.new hash_specs[:symbol], hash_specs[:function]
           when "bitmex"
-            client = BTCData::Market::BitmexClient.new hash_specs[:symbol], hash_specs[:fucntion]
+            client = BTCData::Market::BitmexClient.new hash_specs[:symbol], hash_specs[:function]
           end
         end
 
@@ -134,7 +134,7 @@ module BTCData
       end
 
       def pre_setup_parser
-        p "Setting up parser for #{exchange}:#{symbol}:#{function}"
+        p "Setting up parser for #{@exchange}:#{@symbol}:#{@function}"
       end
       def setup_parser
       end
