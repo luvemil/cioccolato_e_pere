@@ -39,32 +39,6 @@ module BTCData
         self.initial_setup
       end
 
-      def run!
-        if EM.reactor_running?
-          @ws = Faye::WebSocket::Client.new(@url)
-
-          @ws.on :open do |event|
-            p [:open, @exchange]
-            @ws.send(JSON.dump(@on_open))
-          end
-
-          @ws.on :message do |event|
-            data = JSON.parse(event.data)
-            @parser.parse data
-          end
-
-          @ws.on :close do |event|
-            p [:close, event.code, event.reason]
-            @ws = nil
-
-            # Force restart in case of closure
-            self.cleanup
-            self.initial_setup
-            self.run!
-          end
-        end
-      end
-
       def initial_setup
         self.setup_feed
         self.setup_parser
@@ -72,6 +46,61 @@ module BTCData
 
       def cleanup
         @parser.dump
+      end
+
+      def setup_feed
+        @feed =
+          case @function
+          when "orderbook"
+            BTCData::FeedSlice.new @exchange, @symbol, "orderbook", @live_dir
+          when "trades"
+            BTCData::FeedSlice.new @exchange, @symbol, "trades", @live_dir
+          end
+        self.set_feed_headers
+        self.post_setup_feed
+      end
+
+      def set_feed_headers
+      end
+      def post_setup_feed
+      end
+
+      def pre_setup_parser
+        p "Setting up parser for #{@exchange}:#{@symbol}:#{@function}"
+      end
+      def setup_parser
+      end
+
+      def run!
+        if EM.reactor_running?
+          @ws = Faye::WebSocket::Client.new(@url)
+
+          @ws.onopen = method(:ws_onopen)
+
+          @ws.onmessage = method(:ws_onmessage)
+
+          @ws.onclose = method(:ws_onclose)
+        end
+      end
+
+      def ws_onopen event
+        p [:open, @exchange]
+        @ws.send(JSON.dump(@on_open))
+      end
+
+      def ws_onmessage event
+        data = JSON.parse(event.data)
+        @parser.parse data
+      end
+
+      def ws_onclose event
+        p [:close, event.code, event.reason]
+        @ws = nil
+
+        # Force restart in case of closure
+        self.cleanup
+        self.initial_setup
+        self.run!
       end
 
       def on_open hash
@@ -113,32 +142,8 @@ module BTCData
         end
         client
       end
-
-
-
-      def setup_feed
-        @feed =
-          case @function
-          when "orderbook"
-            BTCData::FeedSlice.new @exchange, @symbol, "orderbook", @live_dir
-          when "trades"
-            BTCData::FeedSlice.new @exchange, @symbol, "trades", @live_dir
-          end
-        self.set_feed_headers
-        self.post_setup_feed
-      end
-
-      def set_feed_headers
-      end
-      def post_setup_feed
-      end
-
-      def pre_setup_parser
-        p "Setting up parser for #{@exchange}:#{@symbol}:#{@function}"
-      end
-      def setup_parser
-      end
     end
+
     class BitfinexClient < BTCData::Market::Client
       def initialize symbol, function
         super "bitfinex", symbol, function
@@ -162,6 +167,7 @@ module BTCData
         end
       end
     end
+
     class BitmexClient < BTCData::Market::Client
       def initialize symbol, function
         super "bitmex", symbol, function
