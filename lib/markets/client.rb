@@ -14,16 +14,21 @@ module BTCData
     end
 
     def self.is_valid? hash
+      # TODO: rewrite this method in a more understandable way
       if hash.kind_of? Hash
-        [:name, :symbol, :function, :open].each do |key|
+        [:name, :symbol, :function].each do |key|
           if not hash.has_key? key
             return false
           end
         end
-        if hash[:open].kind_of? Hash
-          return true
+        if hash.has_key? :open
+          if hash[:open].kind_of? Hash
+            return true
+          else
+            return false
+          end
         else
-          return false
+          return true
         end
       end
       return false
@@ -46,6 +51,12 @@ module BTCData
 
       def cleanup
         @parser.dump
+      end
+
+      def restart
+        self.cleanup
+        self.initial_setup
+        self.run!
       end
 
       def setup_feed
@@ -71,6 +82,14 @@ module BTCData
       def setup_parser
       end
 
+      def on_open= hash
+        @on_open = hash
+      end
+
+      def on_close= hash
+        @on_close = hash
+      end
+
       def run!
         if EM.reactor_running?
           @ws = Faye::WebSocket::Client.new(@url)
@@ -83,6 +102,8 @@ module BTCData
         end
       end
 
+      # START - definition of the websocket callbacks, can be redefined in children class
+      # to have more functionality
       def ws_onopen event
         p [:open, @exchange]
         @ws.send(JSON.dump(@on_open))
@@ -91,6 +112,10 @@ module BTCData
       def ws_onmessage event
         data = JSON.parse(event.data)
         @parser.parse data
+        # TODO: add logic to check if the stream is still alive.
+        # IDEAS: @parser.parse could return some data, e.g. could return true if the massage is an
+        # hearthbeat in case the exchange supports it, and then force a channel ping/pong if last message
+        # was too far in the past
       end
 
       def ws_onclose event
@@ -98,18 +123,9 @@ module BTCData
         @ws = nil
 
         # Force restart in case of closure
-        self.cleanup
-        self.initial_setup
-        self.run!
+        self.restart
       end
-
-      def on_open hash
-        @on_open = hash
-      end
-
-      def on_close hash
-        @on_close = hash
-      end
+      # END
 
       def self.create_new hash_specs
         # hash_specs: {
@@ -136,9 +152,11 @@ module BTCData
           end
         end
 
-        client.on_open hash_specs[:open]
+        if hash_specs.has_key? :open
+          client.on_open = hash_specs[:open]
+        end
         if hash_specs.has_key? :close
-          client.on_close hash_specs[:close]
+          client.on_close = hash_specs[:close]
         end
         client
       end
@@ -148,7 +166,10 @@ module BTCData
       def initialize symbol, function
         super "bitfinex", symbol, function
         @url = "wss://api.bitfinex.com/ws/2"
+
+        self.set_on_open symbol, function
       end
+
       def set_feed_headers
         case @function
         when "orderbook"
@@ -157,6 +178,7 @@ module BTCData
           @feed.set_header %W[Timestamp Id MTS Amount Price]
         end
       end
+
       def setup_parser
         self.pre_setup_parser
         case @function
@@ -166,13 +188,36 @@ module BTCData
           @parser = BTCData::Bitfinex::TradesParser.new @feed, @exchange, @live_dir
         end
       end
+
+      def set_on_open symbol, function
+        req_symbol = "t#{symbol.upcase}"
+        case function
+        when "orderbook"
+          @on_open = {
+            "event" => "subscribe",
+            "channel" => "book",
+            "symbol" => req_symbol,
+            "prec" => "P1",
+            "freq" => "F0",
+            "len" => "100"
+          }
+        when "trades"
+          @on_open = {
+            "event" => "subscribe",
+            "channel" => "trades",
+            "symbol" => req_symbol,
+          }
+        end
+      end
     end
 
     class BitmexClient < BTCData::Market::Client
       def initialize symbol, function
         super "bitmex", symbol, function
         @url = "wss://www.bitmex.com/realtime"
+        self.set_on_open symbol, function
       end
+
       def set_feed_headers
         case @function
         when "orderbook"
@@ -181,6 +226,7 @@ module BTCData
           #TODO: add trades header here
         end
       end
+
       def setup_parser
         self.pre_setup_parser
         case @function
@@ -188,6 +234,16 @@ module BTCData
           @parser = BTCData::Bitmex::Parser.new @feed, @exchange, @live_dir
         when "trades"
           #TODO: add trades parser
+        end
+      end
+
+      def set_on_open symbol, function
+        case function
+        when "orderbook"
+          @on_open = {
+            "op" => "subscribe",
+            "args" => ["orderBookL2:XBTUSD"] #TODO change this request with a function
+          }
         end
       end
     end

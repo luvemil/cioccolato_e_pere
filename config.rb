@@ -1,9 +1,11 @@
 $LOAD_PATH << "./lib"
 
-def change_symbol hash, sym, tsym
+def change_symbol hash, sym, tsym=nil
   new_hash = hash.clone
   new_hash[:symbol] = sym
-  new_hash[:open]["symbol"] = tsym
+  if new_hash.has_key? :open
+    new_hash[:open]["symbol"] = tsym
+  end
   new_hash
 end
 
@@ -15,17 +17,6 @@ module Targets
     :name => "bitfinex",
     :symbol => "btcusd",
     :function => "orderbook",
-    :open => {
-      "event" => "subscribe",
-      "channel" => "book",
-      "symbol" => "tBTCUSD",
-      "prec" => "P1",
-      "freq" => "F0",
-      "len" => "100"
-    },
-    :close => {
-      "event" => "unsubscribe"
-    }
   }
 
   @bitfinextrades = {
@@ -33,14 +24,6 @@ module Targets
     :name => "bitfinex",
     :symbol => "btcusd",
     :function => "trades",
-    :open => {
-      "event" => "subscribe",
-      "channel" => "trades",
-      "symbol" => "tBTCUSD",
-    },
-    :close => {
-      "event" => "unsubscribe"
-    }
   }
 
   @bitmexbook = {
@@ -48,10 +31,6 @@ module Targets
     :name => "bitmex",
     :symbol => "btcusd",
     :function => "orderbook",
-    :open => {
-      "op" => "subscribe",
-      "args" => ["orderBookL2:XBTUSD"]
-    }
   }
   @targets = [
     @bitfinexbook,
