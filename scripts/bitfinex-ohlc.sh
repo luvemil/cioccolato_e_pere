@@ -110,6 +110,7 @@ do
     --data-urlencode "end=$ENDOPT" \
     "${BASEQUERY}"
   if [ $( wc -l <  tmp_files/$FILENAME ) -le 15 ]
+    # TODO: do a better check for ratelimits
   then
     SMALLCOUNT=0
     case $DENSITY in
