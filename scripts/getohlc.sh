@@ -102,6 +102,8 @@ fi
 COUNT=1
 SMALLCOUNT=0
 
+rm -rf tmp_files
+
 while [ $(gnudate -d"$SDATE" +%s) -lt $(gnudate -d"$EDATE" +%s)  ]
 do
   if $JSON_OUTPUT

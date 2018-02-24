@@ -93,6 +93,8 @@ else
   EDATE=$(gnudate -u "+%F %T")
 fi
 
+rm -rf tmp_files
+
 COUNT=1
 SMALLCOUNT=0
 
