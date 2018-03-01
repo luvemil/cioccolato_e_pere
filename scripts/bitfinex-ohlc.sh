@@ -120,6 +120,9 @@ do
       5m)
         SDATE=$(gnudate --date="$SDATE 3600 minutes" "+%F %T")
         ;;
+      30m)
+        SDATE=$(gnudate --date="$SDATE 360 hours" "+%F %T")
+        ;;
       1h)
         SDATE=$(gnudate --date="$SDATE 720 hours" "+%F %T")
         ;;
@@ -160,7 +163,8 @@ if ! $JSON_OUTPUT
 then
   mkdir -p csv_files
   # TODO: add a header
-  jq '.[]|@csv' < json_files/$OUTPUT.json | xargs -I {} echo {} > csv_files/$OUTPUT.csv
+  echo "Timestamp,Open,Close,High,Low,Volume" > csv_files/$OUTPUT.csv
+  jq '.[]|@csv' < json_files/$OUTPUT.json | xargs -I {} echo {} >> csv_files/$OUTPUT.csv
 fi
 
 mv tmp_files ${SYMBOL}_files
