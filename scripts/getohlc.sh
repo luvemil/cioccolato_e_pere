@@ -118,7 +118,8 @@ do
     --data-urlencode "startTime=$SDATE" \
     --data-urlencode "endTime=$EDATE" \
     "${BASEQUERY}"
-  if [ $( wc -l <  tmp_files/$FILENAME ) -le 15 ]
+  # Check if the downloaded file is at least 15 lines long
+  if [ $( wc -l <  tmp_files/$FILENAME ) -ge 15 ]
   then
     SMALLCOUNT=0
     case $DENSITY in
