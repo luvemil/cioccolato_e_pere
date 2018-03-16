@@ -123,7 +123,7 @@ else
     echo "Using input file $OLD_CSV_FILE"
     SDATE=$(tail -n 1 $OLD_CSV_FILE | perl -pe 's|"(.*?)",.*|\1|')
     SDATE=$(gnudate -u -d "$SDATE" "+%F %T")
-    SDATE=$(gnudate --date="$SDATE 1 minute")
+    SDATE=$(gnudate --date="$SDATE 1 minute" "+%F %T")
 
     if [ $# -lt 1 ]
     then
