@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# USAGE:
+# getohlc.sh [-d <density>|-o <output>|-s <symbol>|--json] <start_date> [<end_date>]
+# getohlc.sh [-d <density>|-o <output>|-s <symbol>] -i <old_csv_file> [<end_date>]
+
 # Check if running Mac, else assume Linux
 if [ "$(uname)" == "Darwin" ]
 then
@@ -39,6 +43,11 @@ do
       ;;
     -s|--symbol)
       SYMBOL="$2"
+      shift
+      shift
+      ;;
+    -i|--input)
+      OLD_CSV_FILE="$2"
       shift
       shift
       ;;
@@ -83,21 +92,49 @@ fi
 >&2 echo "Using basequery = $BASEQUERY"
 
 
-if [ $# -lt 1 ]
-then
-  >&2 echo "Error: not enough arguments given, expecting 1 or 2"
-  exit 1
-fi
-
 CURL_OPTIONS=""
 
-SDATE=$1
-if [ $# -gt 1 ]
+# Setup start and end dates based on the two possible syntaxes for
+# our command
+if [ -z ${OLD_CSV_FILE+x} ]
 then
-  EDATE=$2
+  if [ $# -lt 1 ]
+  then
+    >&2 echo "Error: not enough arguments given, expecting 1 or 2"
+    exit 1
+  fi
+
+  SDATE=$1
+
+  if [ $# -gt 1 ]
+  then
+    EDATE=$2
+  else
+    EDATE=$(gnudate -u "+%F %T")
+  fi
 else
-  EDATE=$(gnudate -u "+%F %T")
+  if $JSON_OUTPUT
+  then
+    echo "Error: -i option incompatible with --json"
+    exit 1
+  else
+    # TODO: add some sanity check to the following assignment to check that
+    # the date exists, at least.
+    echo "Using input file $OLD_CSV_FILE"
+    SDATE=$(tail -n 1 $OLD_CSV_FILE | perl -pe 's|"(.*?)",.*|\1|')
+    SDATE=$(gnudate -u -d "$SDATE" "+%F %T")
+    SDATE=$(gnudate --date="$SDATE 1 minute")
+
+    if [ $# -lt 1 ]
+    then
+      EDATE=$(gnudate -u "+%F %T")
+    else
+      EDATE=$1
+    fi
+  fi
 fi
+
+START_DATE=$SDATE # This variable to be used later in the name of the file
 
 COUNT=1
 SMALLCOUNT=0
@@ -156,7 +193,7 @@ done
 
 if [ -z ${OUTPUT+x} ]
 then
-  OUTPUT=${SYMBOL}_${DENSITY}_$(gnudate -d"$1" "+%FT%H-%M-%S")_$(gnudate -d"$EDATE" "+%FT%H-%M-%S")
+  OUTPUT=${SYMBOL}_${DENSITY}_$(gnudate -d"$START_DATE" "+%FT%H-%M-%S")_$(gnudate -d"$EDATE" "+%FT%H-%M-%S")
   >&2 echo "Using filename = ${OUTPUT}"
 fi
 
