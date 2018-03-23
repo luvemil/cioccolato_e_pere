@@ -19,6 +19,18 @@ gnudate() {
   fi
 }
 
+download_success() {
+  msg=$(jq ".[0]" < $1)
+  if [ "$msg" == "\"error\"" ]
+  then
+    # 1 = false
+    return 1
+  else
+    # 0 = true
+    return 0
+  fi
+}
+
 JSON_OUTPUT=false
 
 POSITIONAL=()
@@ -71,7 +83,7 @@ BASEURL="https://api.bitfinex.com/v2"
 ENDPOINT="/candles/trade"
 
 BASEQUERY="${BASEURL}${ENDPOINT}:${DENSITY}:${SYMBOL}/hist"
-BASEQUERT=$BASEQUERY"&limit=720&sort=1"
+BASEQUERY=$BASEQUERY"?&limit=720&sort=1"
 
 
 >&2 echo "Using basequery = $BASEQUERY"
@@ -109,8 +121,8 @@ do
     --data-urlencode "start=$STARTOPT" \
     --data-urlencode "end=$ENDOPT" \
     "${BASEQUERY}"
-  if [ $( wc -l <  tmp_files/$FILENAME ) -le 15 ]
-    # TODO: do a better check for ratelimits
+  if download_success tmp_files/$FILENAME
+    # 0 = true
   then
     SMALLCOUNT=0
     case $DENSITY in
@@ -131,15 +143,17 @@ do
         ;;
     esac
   else
+    >&2 echo "Error: ratelimit exceeded, waiting 20 seconds"
     SMALLCOUNT=$(( $SMALLCOUNT + 1 ))
-    sleep 5
+    sleep 30
   fi
   if [ $SMALLCOUNT -ge 15 ]
   then
     >&2 echo "Error downloading $SYMBOL"
     exit 2
   fi
-  if (($COUNT % 270 == 0))
+  if (($COUNT % 85 == 0))
+    # Sleep 30 seconds each 90 iterations. Possibly overkill, since the ratelimit is 90 api calls each minute.
   then
     sleep 30
   fi
