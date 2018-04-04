@@ -58,6 +58,10 @@ do
       JSON_OUTPUT=true
       shift
       ;;
+    --debug)
+      DEBUG=true
+      shift
+      ;;
     *)
       POSITIONAL+=("$1")
       shift;;
@@ -88,6 +92,10 @@ BASEQUERY=$BASEQUERY"?&limit=720&sort=1"
 
 >&2 echo "Using basequery = $BASEQUERY"
 
+if [ ! -z ${DEBUG+x} ]
+then
+  exit 0
+fi
 
 if [ $# -lt 1 ]
 then
@@ -114,8 +122,8 @@ while [ $(gnudate -d"$SDATE" +%s) -lt $(gnudate -d"$EDATE" +%s)  ]
 do
   FILE_EXT=.json
   FILENAME=$(gnudate -d"$SDATE" +%s)$FILE_EXT
-  STARTOPT=$(gnudate --date "$SDATE" +%s3N)
-  ENDOPT=$(gnudate --date "$EDATE" +%s3N)
+  STARTOPT=$(gnudate --date "$SDATE" +%s%3N)
+  ENDOPT=$(gnudate --date "$EDATE" +%s%3N)
   curl --create-dirs -o tmp_files/$FILENAME \
     $CURL_OPTIONS -G -X GET --header 'Accept: application/json' \
     --data-urlencode "start=$STARTOPT" \
